@@ -24,7 +24,10 @@ mrr_with_changes as (
             0
         ) as previous_month_mrr,
 
-        mrr - previous_month_mrr as mrr_change
+        mrr -         coalesce(
+            lag(mrr) over (partition by customer_id order by date_month),
+            0
+        ) as mrr_change
 
     from unioned
 
@@ -50,7 +53,10 @@ final as (
             when mrr_change < 0 then 'downgrade'
         end as change_category,
 
-        least(mrr, previous_month_mrr) as renewal_amount
+        least(mrr,         coalesce(
+            lag(mrr) over (partition by customer_id order by date_month),
+            0
+        )) as renewal_amount
 
     from mrr_with_changes
 
